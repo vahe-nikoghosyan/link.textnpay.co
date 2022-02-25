@@ -1,38 +1,113 @@
 .App {
-  text-align: center;
-}
+  height: 100vh;
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
+  font-family: Roboto;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 16px;
+  letter-spacing: 0.15px;
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+  color: rgba(26, 26, 26, 0.6);
+  .App-header {
   }
-}
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
+  main {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
 
-.App-link {
-  color: #61dafb;
-}
+    padding: 17px;
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
+    h2 {
+      margin: 0px 0 32px 0;
+    }
+
+    & > div {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      max-width: 390px;
+      width: 100%;
+
+      & > p {
+        margin-bottom: 25px;
+        color: rgba(26, 26, 26, 0.6);
+      }
+
+      .magic-link-form {
+        width: 100%;
+        padding: 45px;
+        background: #FFFFFF;
+        box-shadow: 1px 1px 40px rgba(26, 26, 26, 0.1);
+        border-radius: 24px;
+
+        form {
+          width: 100%;
+
+          & > div {
+            width: 100%;
+          }
+
+          & > div:nth-child(1), & > div:nth-child(2) {
+            margin-bottom: 24px;
+          }
+
+          .change-phone-number-btn {
+            text-transform: none;
+            justify-content: flex-start;
+            padding-left: 0;
+          }
+
+          .btn {
+            margin-top: 15px;
+            background: #FFAC30;
+            color: #1A1A1A;
+            text-transform: none;
+          }
+
+          .btn-confirm {
+            margin-top: 15px;
+            background: #ffffff;
+            color: #1A1A1A;
+            text-transform: none;
+          }
+
+          .MuiOutlinedInput-input {
+            padding: 20px 0;
+          }
+
+          fieldset {
+            border: 0px;
+            border-bottom: 1px solid gray;
+            border-radius: 0;
+
+          }
+
+          #standard-head-helper-text {
+            font-weight: normal;
+            font-size: 15px;
+            line-height: 24px;
+
+            letter-spacing: 0.15px;
+            color: rgba(26, 26, 26, 0.9);
+            text-align: start;
+          }
+
+          #standard-content-helper-text {
+            font-style: normal;
+            font-weight: normal;
+            font-size: 12px;
+            line-height: 12px;
+            color: rgba(26, 26, 26, 0.6);
+          }
+        }
+
+      }
+    }
+
+
   }
 }
