@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const path = require('path');
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.PORT || 3004;
 const fs = require('fs')
 // static resources should just be served as they are
 app.use(express.static(
