@@ -53,7 +53,7 @@ const Coupon = () => {
                     </div>
                     <div>
                         <span>Amount:</span>
-                        <span>{amount}</span>
+                        <span>{amount} AMD</span>
                     </div>
                     <div>
                         <span>Date:</span>

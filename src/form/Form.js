@@ -1,4 +1,5 @@
 import React, {useState, useEffect} from 'react';
+import axios from "axios";
 import queryString from 'query-string';
 import Input from '@mui/material/Input';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -14,12 +15,17 @@ import TextField from '@mui/material/TextField';
 import LogoSvg from '../images/logo.svg';
 import Button from '@mui/material/Button';
 import {
-    useLocation
+    useLocation,
+    useHistory
 } from "react-router-dom";
 import { usePaymentInputs } from 'react-payment-inputs';
 import images from "react-payment-inputs/images";
 import {RecaptchaVerifier, signInWithPhoneNumber} from "firebase/auth";
 import CountDown from "./countDown";
+// import {io} from "socket.io-client";
+import { w3cwebsocket as W3CWebSocket } from "websocket";
+
+const client = new W3CWebSocket(`ws://${process.env.REACT_APP_API_URL.replace('http:', '').replace('https://', '')}`);
 
 const Alert = React.forwardRef(function Alert(props, ref) {
     return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -28,15 +34,21 @@ const Alert = React.forwardRef(function Alert(props, ref) {
 const initState = {
     firstname: '',
     lastname: '',
-    receiver: '',
     otp: '',
     phoneNumberDisabled: true,
     buttonStatus: 'confirm-number',
     cardSectionVisible: false,
     cardNumber: '',
     cvc: '',
-    expiration_date: ''
+    expiration_date: '',
+    sender: '',
+    receiver: '',
+    amount: '',
+    token: ''
 }
+
+// const ENDPOINT = "ws://localhost:3000?userId=256";
+// const socket = io(ENDPOINT, {});
 
 const Form = ({ auth }) => {
     const [linkFormState, setFormState] = useState(initState);
@@ -46,6 +58,29 @@ const Form = ({ auth }) => {
     const { getCardNumberProps, getCardImageProps, getCVCProps, getExpiryDateProps } = usePaymentInputs();
 
     const location = useLocation();
+    const history = useHistory()
+
+    useEffect(() => {
+
+        console.log('trying ...')
+        client.onopen = () => {
+            console.log('WebSocket Client Connected');
+        };
+
+        client.onmessage = (message) => {
+            console.log(message);
+
+            const data = JSON.parse(message.data);
+            if (data && data.message.includes('has been declined')) {
+                alert('has been declined')
+            }
+            if (data && data.message.includes('You received')) {
+                console.log(data, 'data')
+                const { id, sender, phoneNumber, date, amount, time } = data.body;
+                history.push(`/coupon?receipt=${id}&sender=${sender}&phoneNumber=${phoneNumber}&amount=${amount}&date=${date}&time=${time}`)
+            }
+        };
+    }, [history])
 
     const handleTogglePhoneNumber = () => {
         setFormState({
@@ -68,11 +103,14 @@ const Form = ({ auth }) => {
         const parsed = queryString.parse(location.search);
         if (parsed) {
             console.log(parsed, 'parsed')
-            const {sender, receiver} = parsed;
+            const {sender, receiver, token, amount} = parsed;
             console.log(receiver, 'phone')
             setFormState({
                 ...linkFormState,
-                receiver
+                receiver,
+                token,
+                amount,
+                sender
             })
         }
     }, [location, setFormState]);
@@ -103,7 +141,6 @@ const Form = ({ auth }) => {
         event.preventDefault();
         handleGenerateReCAPTCHA();
         console.log(receiver, 'phone')
-        const phoneNumber = '+374 98060332';
         const appVerifier = window.recaptchaVerifier;
         console.log(appVerifier, 'appVerifier')
 
@@ -126,6 +163,11 @@ const Form = ({ auth }) => {
 
         if (otp && otp.length === 6) {
             console.log(otp)
+            // setFormState({
+            //     ...linkFormState,
+            //     buttonStatus: 'phone-number-confirmed',
+            //     cardSectionVisible: true,
+            // })
             // verify OTP
             let confirmationResult = window.confirmationResult
             confirmationResult.confirm(otp).then((result) => {
@@ -135,7 +177,8 @@ const Form = ({ auth }) => {
                 setFormState({
                     ...linkFormState,
                     buttonStatus: 'phone-number-confirmed',
-                    cardSectionVisible: true
+                    cardSectionVisible: true,
+                    user
                 })
             }).catch((error) => {
                 console.log(error, 'error')
@@ -143,10 +186,75 @@ const Form = ({ auth }) => {
         }
     }
 
+    const makeTrnasaction = async (reqData) => {
+        const { receiver, token, amount } = linkFormState
+        const data = JSON.stringify({
+            "text":"send",
+            "receiver": receiver,
+            "card_id": reqData.card_id,
+            "amount": amount,
+            "receiver_card":{
+                "number":"4242424242424242",
+                "exp":"10/24",
+                "cvc":"867"}
+        });
+        const config = {
+            method: 'post',
+            url: `${process.env.REACT_APP_API_URL}transactions`,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            data : data
+        };
+        axios(config)
+            .then(function (response) {
+                console.log(JSON.stringify(response.data));
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+
+    }
+
     const handleCardDataSent = async (event) => {
+        console.log('rest')
         setLoading(true);
         event.preventDefault();
         await new Promise(r => setTimeout(r, 2500)); // sleep
+
+        const { user, cardNumber, cvc, expiration_date, firstname, lastname, sender, receiver, token } = linkFormState
+        const data = JSON.stringify({
+            card_number: cardNumber,
+            client_name: `${firstname.toUpperCase()} ${lastname.toUpperCase()}`,
+            exp_date: expiration_date,
+            cvv: cvc
+        });
+        const config = {
+            method: 'post',
+            url: `${process.env.REACT_APP_API_URL}cards`,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            data : data
+        };
+        axios(config)
+            .then(async function (response) {
+                console.log(JSON.stringify(response.data));
+                const res = response.data
+
+                if (res.success) {
+                    await makeTrnasaction({
+                        card_id: res.id
+                    })
+                }
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+
+
         setLoading(false);
         setNotification(true);
         setDataSent(true);
@@ -163,6 +271,7 @@ const Form = ({ auth }) => {
                             // onClose={handleClose}
                             severity="success" sx={{ width: '100%' }}>
                             Data sent successfully!
+                            Please, wait until the sender confirms the transaction
                         </Alert>
                     </Snackbar>
                     <Backdrop
@@ -178,7 +287,10 @@ const Form = ({ auth }) => {
 
                     {
                         dataSent ? (
-                            <p>Data sent successfully!</p>
+                            <p>
+                                Data sent successfully! <br/>
+                                Please, wait until the sender confirms the transaction
+                            </p>
                         ) : (
                             <>
                                 <p>
@@ -294,7 +406,8 @@ const Form = ({ auth }) => {
                                                                     <InputAdornment position="end">
                                                                         <svg {...getCardImageProps({ images })} />
                                                                     </InputAdornment>
-                                                                )})
+                                                                )}),
+                                                            onChange: handleChange
                                                         }}
                                                         name={'cardNumber'}
                                                         // id="card-number"

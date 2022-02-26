@@ -23,14 +23,15 @@
     "socket.io-client": "^4.4.1",
     "styled-components": "^5.3.3",
     "validator": "^13.7.0",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "websocket": "^1.0.34"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "server" : "npm run build && node server/index.js"
+    "server": "npm run build && node server/index.js"
   },
   "eslintConfig": {
     "extends": [

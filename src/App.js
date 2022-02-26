@@ -12,33 +12,10 @@ import {auth} from "./firebase";
 import {io} from "socket.io-client";
 import {useEffect} from "react";
 
-const ENDPOINT = "ws://localhost:3000?userId=256";
-const socket = io(ENDPOINT, {transports: ['websocket']});
+
 const App = () => {
 
     useEffect(() => {
-        console.log('trying ...')
-
-
-        socket.on('transaction', function(msg){
-            console.log('transaction msg', msg);
-        });
-        socket.on(`${256}`, function(msg){
-            console.log('transaction msg', msg);
-        });
-        // const socket = socketIOClient(ENDPOINT);
-        // socket.on("connection", (sok) => {
-        //     console.log('connected', sok);
-        // })
-        // console.log(socket, 'soket')
-        //
-        // socket.on('transaction', function(msg){
-        //     console.log('transaction msg', msg);
-        // });
-
-        // socket.emit('transaction', 'gago')
-
-        // return () => socket.disconnect() // unmount
     }, []);
 
   return (
