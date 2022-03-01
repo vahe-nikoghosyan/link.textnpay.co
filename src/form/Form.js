@@ -25,7 +25,7 @@ import CountDown from "./countDown";
 // import {io} from "socket.io-client";
 import { w3cwebsocket as W3CWebSocket } from "websocket";
 
-const client = new W3CWebSocket(`ws://${process.env.REACT_APP_API_URL.replace('http:', '').replace('https://', '')}`);
+const client = new W3CWebSocket(`wss://${process.env.REACT_APP_API_URL.replace('http:', '').replace('https://', '')}`);
 
 const Alert = React.forwardRef(function Alert(props, ref) {
     return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
