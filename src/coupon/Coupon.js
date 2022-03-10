@@ -32,7 +32,7 @@ const Coupon = () => {
             })
         }
     }, [location, setCouponState]);
-
+    console.log(couponState, 'coupon state')
     const { receipt,sender, phoneNumber, amount, date, time} = couponState;
 
     return (

@@ -44,7 +44,11 @@ const initState = {
     sender: '',
     receiver: '',
     amount: '',
-    token: ''
+    token: '',
+    errors: {
+        firstname: null,
+        lastname: null
+    }
 }
 
 // const ENDPOINT = "ws://localhost:3000?userId=256";
@@ -92,11 +96,30 @@ const Form = ({ auth }) => {
     const handleChange = (event) => {
         const { name, value } = event.target;
 
-        console.log(name, value)
-        setFormState({
-            ...linkFormState,
-            [name]: value
-        })
+        console.log(value.length)
+        
+        if (value.length === 0) {
+            console.log('hamo jan');
+            setFormState({
+                ...linkFormState,
+                [name]: value,
+                errors: {
+                    ...linkFormState.errors,
+                    [name]: `${name} required`
+                }
+            })
+        } else {
+            setFormState({
+                ...linkFormState,
+                [name]: value,
+                errors: {
+                    ...linkFormState.errors,
+                    [name]: null
+                }
+            })
+        }
+
+
     }
 
     useEffect(() => {
@@ -125,8 +148,11 @@ const Form = ({ auth }) => {
         cardSectionVisible,
         cardNumber,
         cvc,
-        expiration_date
+        expiration_date,
+        errors
     } = linkFormState;
+
+    console.log(errors, 'errors')
 
     const handleGenerateReCAPTCHA = () => {
         window.recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', {
@@ -143,6 +169,10 @@ const Form = ({ auth }) => {
         console.log(receiver, 'phone')
         const appVerifier = window.recaptchaVerifier;
         console.log(appVerifier, 'appVerifier')
+
+        if (!firstname.length ||
+            !lastname.length ||
+            !receiver) return
 
 
         signInWithPhoneNumber(auth, receiver, appVerifier)
@@ -302,10 +332,14 @@ const Form = ({ auth }) => {
                                         <TextField
                                             name={'firstname'}
                                             id="first-name"
+                                            className={errors.firstname ? 'Mui-error' : ''}
                                             label="First name"
                                             variant="standard"
                                             onChange={handleChange}
                                             value={firstname}
+                                            helperText={
+                                                errors.firstname ? <p className="Mui-error">First name required</p> : ''
+                                            }
                                         />
                                         <TextField
                                             name={'lastname'}
