@@ -14,6 +14,7 @@
   .Mui-focused {
     color: #FFAC30 !important;
   }
+  
 
   .MuiInput-root {
     color: rgba(0, 0, 0, 0.87) !important;
@@ -89,6 +90,11 @@
             background: #FFAC30;
             color: #1A1A1A;
             text-transform: none;
+            box-shadow: none !important;
+
+            &:hover {
+              background: #ffac30b7;
+            }
           }
 
           .btn-confirm {

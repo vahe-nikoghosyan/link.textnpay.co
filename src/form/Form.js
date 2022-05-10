@@ -130,7 +130,7 @@ const Form = ({ auth }) => {
             console.log(receiver, 'phone')
             setFormState({
                 ...linkFormState,
-                receiver,
+                // receiver,
                 token,
                 amount,
                 sender
@@ -165,28 +165,28 @@ const Form = ({ auth }) => {
 
     const handleSubmitForm = (event) => {
         event.preventDefault();
-        handleGenerateReCAPTCHA();
+        // handleGenerateReCAPTCHA();
         console.log(receiver, 'phone')
-        const appVerifier = window.recaptchaVerifier;
-        console.log(appVerifier, 'appVerifier')
+        // const appVerifier = window.recaptchaVerifier;
+        // console.log(appVerifier, 'appVerifier')
 
         if (!firstname.length ||
             !lastname.length ||
             !receiver) return
 
 
-        signInWithPhoneNumber(auth, receiver, appVerifier)
-            .then(result => {
-                console.log('reslut', result)
-                window.confirmationResult = result
+        // signInWithPhoneNumber(auth, receiver, appVerifier)
+        //     .then(result => {
+        //         console.log('reslut', result)
+        //         window.confirmationResult = result
 
                 setFormState({
                     ...linkFormState,
                     buttonStatus: 'confirm-code'
                 })
-            }).catch(err => {
-            console.log(err, 'err')
-        })
+        //     }).catch(err => {
+        //     console.log(err, 'err')
+        // })
     }
 
     const handleOtpVerify = () => {
@@ -199,20 +199,20 @@ const Form = ({ auth }) => {
             //     cardSectionVisible: true,
             // })
             // verify OTP
-            let confirmationResult = window.confirmationResult
-            confirmationResult.confirm(otp).then((result) => {
-                const user = result.user;
-                console.log(user, 'user')
+            // let confirmationResult = window.confirmationResult
+            // confirmationResult.confirm(otp).then((result) => {
+            //     const user = result.user;
+            //     console.log(user, 'user')
 
                 setFormState({
                     ...linkFormState,
                     buttonStatus: 'phone-number-confirmed',
                     cardSectionVisible: true,
-                    user
+                    // user
                 })
-            }).catch((error) => {
-                console.log(error, 'error')
-            })
+            // }).catch((error) => {
+            //     console.log(error, 'error')
+            // })
         }
     }
 
@@ -290,6 +290,8 @@ const Form = ({ auth }) => {
         setDataSent(true);
     }
 
+    console.log(cardSectionVisible, 'cardSectionVisible');
+
     return (
             <main>
                 <div>
@@ -340,6 +342,7 @@ const Form = ({ auth }) => {
                                             helperText={
                                                 errors.firstname ? <p className="Mui-error">First name required</p> : ''
                                             }
+                                            disabled={cardSectionVisible}
                                         />
                                         <TextField
                                             name={'lastname'}
@@ -348,29 +351,31 @@ const Form = ({ auth }) => {
                                             variant="standard"
                                             onChange={handleChange}
                                             value={lastname}
+                                            disabled={cardSectionVisible}
                                         />
-
+                                        <TextField
+                                            name={'receiver'}
+                                            id="filled-disabled"
+                                            // id="mobile-phone-number"
+                                            label="Mobile phone number"
+                                            variant="standard"
+                                            value={receiver}
+                                            // disabled={phoneNumberDisabled}
+                                            onChange={handleChange}
+                                            disabled={cardSectionVisible}
+                                        />
                                         {
                                             !cardSectionVisible ? (
                                                 <>
-                                                    <TextField
-                                                        name={'receiver'}
-                                                        id="filled-disabled"
-                                                        // id="mobile-phone-number"
-                                                        label="Mobile phone number"
-                                                        variant="standard"
-                                                        value={receiver}
-                                                        disabled={phoneNumberDisabled}
-                                                        onChange={handleChange}
-                                                    />
-                                                    <Button
+                                                    
+                                                    {/* <Button
                                                         fullWidth={true}
                                                         variant="text"
                                                         className={'change-phone-number-btn'}
                                                         onClick={handleTogglePhoneNumber}
                                                     >
                                                         Change the phone number
-                                                    </Button>
+                                                    </Button> */}
                                                     {
                                                         buttonStatus === 'confirm-code' && (
                                                             <>
@@ -450,7 +455,7 @@ const Form = ({ auth }) => {
                                                         onChange={handleChange}
                                                         // value={card_number}
                                                     />
-                                                    <TextField
+                                                    {/* <TextField
                                                         inputProps={
                                                             getCVCProps({})
                                                         }
@@ -471,7 +476,7 @@ const Form = ({ auth }) => {
                                                         // variant="standard"
                                                         onChange={handleChange}
                                                         // value={expiration_date}
-                                                    />
+                                                    /> */}
                                                     <Button
                                                         variant="contained"
                                                         fullWidth={true}
