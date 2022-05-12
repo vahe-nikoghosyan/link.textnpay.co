@@ -7,6 +7,7 @@ import FormHelperText from '@mui/material/FormHelperText';
 import FormControl from '@mui/material/FormControl';
 import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
+import { JSEncrypt } from "jsencrypt";
 
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
@@ -30,6 +31,11 @@ const client = new W3CWebSocket(`wss://${process.env.REACT_APP_API_URL.replace('
 const Alert = React.forwardRef(function Alert(props, ref) {
     return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
+
+var jsencryptConf = {
+    "publicKey": "-----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDlOJu6TyygqxfWT7eLtGDwajtNFOb9I5XRb6khyfD1Yt3YiCgQWMNW649887VGJiGr/L5i2osbl8C9+WJTeucF+S76xFxdU6jE0NQ+Z+zEdhUTooNRaY5nZiu5PgDB0ED/ZKBUSLKL7eibMxZtMlUDHjm4gwQco1KRMDSmXSMkDwIDAQAB-----END PUBLIC KEY-----",
+    "privateKey": "-----BEGIN RSA PRIVATE KEY-----MIICXQIBAAKBgQDlOJu6TyygqxfWT7eLtGDwajtNFOb9I5XRb6khyfD1Yt3YiCgQWMNW649887VGJiGr/L5i2osbl8C9+WJTeucF+S76xFxdU6jE0NQ+Z+zEdhUTooNRaY5nZiu5PgDB0ED/ZKBUSLKL7eibMxZtMlUDHjm4gwQco1KRMDSmXSMkDwIDAQABAoGAfY9LpnuWK5Bs50UVep5c93SJdUi82u7yMx4iHFMc/Z2hfenfYEzu+57fI4fvxTQ//5DbzRR/XKb8ulNv6+CHyPF31xk7YOBfkGI8qjLoq06V+FyBfDSwL8KbLyeHm7KUZnLNQbk8yGLzB3iYKkRHlmUanQGaNMIJziWOkN+N9dECQQD0ONYRNZeuM8zd8XJTSdcIX4a3gy3GGCJxOzv16XHxD03GW6UNLmfPwenKu+cdrQeaqEixrCejXdAFz/7+BSMpAkEA8EaSOeP5Xr3ZrbiKzi6TGMwHMvC7HdJxaBJbVRfApFrE0/mPwmP5rN7QwjrMY+0+AbXcm8mRQyQ1+IGEembsdwJBAN6az8Rv7QnD/YBvi52POIlRSSIMV7SwWvSK4WSMnGb1ZBbhgdg57DXaspcwHsFV7hByQ5BvMtIduHcT14ECfcECQATeaTgjFnqE/lQ22Rk0eGaYO80cc643BXVGafNfd9fcvwBMnk0iGX0XRsOozVt5AzilpsLBYuApa66NcVHJpCECQQDTjI2AQhFc1yRnCU/YgDnSpJVm1nASoRUnU8Jfm3Ozuku7JUXcVpt08DFSceCEX9unCuMcT72rAQlLpdZir876-----END RSA PRIVATE KEY-----"
+}
 
 const initState = {
     firstname: '',
@@ -55,9 +61,19 @@ const initState = {
 // const socket = io(ENDPOINT, {});
 
 const Form = ({ auth }) => {
+    var encrypt = new JSEncrypt();
+    var decrypt = new JSEncrypt();
+
+    encrypt.setPublicKey(jsencryptConf.publicKey);
+    decrypt.setPrivateKey(jsencryptConf.privateKey);
+
     const [linkFormState, setFormState] = useState(initState);
     const [dataSent, setDataSent] = useState(false);
-    const [notification, setNotification] = useState(false);
+    const [notification, setNotification] = useState({
+        open: false,
+        type: 'success',
+        message: ''
+    });
     const [loading, setLoading] = useState(false);
     const { getCardNumberProps, getCardImageProps, getCVCProps, getExpiryDateProps } = usePaymentInputs();
 
@@ -125,15 +141,40 @@ const Form = ({ auth }) => {
     useEffect(() => {
         const parsed = queryString.parse(location.search);
         if (parsed) {
-            console.log(parsed, 'parsed')
-            const {sender, receiver, token, amount} = parsed;
-            console.log(receiver, 'phone')
+            let cardId;
+            // console.log(parsed, 'parsed')
+            const {sender, receiver, token, amount, user} = parsed;
+            // console.log(receiver, 'phone')
+
+            // console.log(token, 'token')
+
+            const config = {
+                method: 'get',
+                url: `${process.env.REACT_APP_API_URL}cards/current/${user}`,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+            };
+            axios(config)
+                .then(function (response) {
+                    const res = response.data
+
+                    if (res.success) {
+                        cardId = res.data || 1
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+
             setFormState({
                 ...linkFormState,
                 // receiver,
                 token,
                 amount,
-                sender
+                sender,
+                cardId,
             })
         }
     }, [location, setFormState]);
@@ -152,7 +193,7 @@ const Form = ({ auth }) => {
         errors
     } = linkFormState;
 
-    console.log(errors, 'errors')
+    console.log(cardNumber, 'cardNumber')
 
     const handleGenerateReCAPTCHA = () => {
         window.recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', {
@@ -165,28 +206,46 @@ const Form = ({ auth }) => {
 
     const handleSubmitForm = (event) => {
         event.preventDefault();
-        // handleGenerateReCAPTCHA();
-        console.log(receiver, 'phone')
-        // const appVerifier = window.recaptchaVerifier;
+
         // console.log(appVerifier, 'appVerifier')
 
-        if (!firstname.length ||
-            !lastname.length ||
-            !receiver) return
+        // if (!firstname.length ||
+        //     !lastname.length ||
+        //     !receiver) {
+        // }
+
+        if (!receiver) {
+            setNotification({
+                type: 'error',
+                message: 'Please fill the phone number!',
+                open: true
+            });
+            return
+        }
+        handleGenerateReCAPTCHA();
+        // console.log(receiver, 'phone')
+        const appVerifier = window.recaptchaVerifier;
 
 
-        // signInWithPhoneNumber(auth, receiver, appVerifier)
-        //     .then(result => {
-        //         console.log('reslut', result)
-        //         window.confirmationResult = result
+
+        signInWithPhoneNumber(auth, receiver, appVerifier)
+            .then(result => {
+                console.log('reslut', result)
+                window.confirmationResult = result
 
                 setFormState({
                     ...linkFormState,
                     buttonStatus: 'confirm-code'
                 })
-        //     }).catch(err => {
-        //     console.log(err, 'err')
-        // })
+            }).catch(err => {
+            setNotification({
+                type: 'error',
+                message: 'Something went wrong, please try again later!',
+                open: true
+            });
+            return
+            console.log(err, 'err')
+        })
     }
 
     const handleOtpVerify = () => {
@@ -199,9 +258,9 @@ const Form = ({ auth }) => {
             //     cardSectionVisible: true,
             // })
             // verify OTP
-            // let confirmationResult = window.confirmationResult
-            // confirmationResult.confirm(otp).then((result) => {
-            //     const user = result.user;
+            let confirmationResult = window.confirmationResult
+            confirmationResult.confirm(otp).then((result) => {
+                const user = result.user;
             //     console.log(user, 'user')
 
                 setFormState({
@@ -210,23 +269,45 @@ const Form = ({ auth }) => {
                     cardSectionVisible: true,
                     // user
                 })
-            // }).catch((error) => {
-            //     console.log(error, 'error')
-            // })
+            }).catch((error) => {
+                setNotification({
+                    type: 'error',
+                    message: 'The code you entered incorrect or something went wrong!',
+                    open: true
+                });
+                console.log(error, 'error')
+            })
         }
     }
 
-    const makeTrnasaction = async (reqData) => {
-        const { receiver, token, amount } = linkFormState
+    const makeTrnasaction = async (event) => {
+        setLoading(true);
+        event.preventDefault();
+
+        const { receiver, token, amount, cardId, cardNumber, firstname, lastname, userId } = linkFormState
+
+
+        if (!cardNumber) {
+            setNotification({
+                type: 'error',
+                message: 'Please fill the Card number!',
+                open: true
+            });
+            setLoading(false);
+            return;
+        }
+        await new Promise(r => setTimeout(r, 2000)); // sleep
+
         const data = JSON.stringify({
-            "text":"send",
-            "receiver": receiver,
-            "card_id": reqData.card_id,
-            "amount": amount,
-            "receiver_card":{
-                "number":"4242424242424242",
-                "exp":"10/24",
-                "cvc":"867"}
+            "text": encrypt.encrypt("send") || "send",
+            "receiver": encrypt.encrypt(receiver) || receiver,
+            "firstname": encrypt.encrypt(firstname) || firstname,
+            "lastname": encrypt.encrypt(lastname) ||lastname,
+            "card_id": encrypt.encrypt(cardId) || cardId,
+            "amount": encrypt.encrypt(amount) || amount,
+            "receiver_card": {
+                "number": encrypt.encrypt(cardNumber) || cardNumber,
+            }
         });
         const config = {
             method: 'post',
@@ -235,14 +316,27 @@ const Form = ({ auth }) => {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            data : data
+            data: data
         };
         axios(config)
             .then(function (response) {
                 console.log(JSON.stringify(response.data));
+                setLoading(false);
+                setNotification({
+                    ...notification,
+                    open: true,
+                    type: 'success',
+                    message: "Data sent successfully!\n Please, wait until the sender confirms the transaction"
+                });
+                setDataSent(true);
             })
             .catch(function (error) {
-                console.log(error);
+                setNotification({
+                    type: 'error',
+                    message: 'Link session has expired!',
+                    open: true
+                });
+                setLoading(false);
             });
 
     }
@@ -286,7 +380,12 @@ const Form = ({ auth }) => {
 
 
         setLoading(false);
-        setNotification(true);
+        setNotification({
+            ...notification,
+            open: true,
+            type: 'success',
+            message: "Data sent successfully!\n Please, wait until the sender confirms the transaction"
+        });
         setDataSent(true);
     }
 
@@ -296,14 +395,13 @@ const Form = ({ auth }) => {
             <main>
                 <div>
                     <Snackbar
-                        open={notification} autoHideDuration={6000}
-                        onClose={() => setNotification(false)}
+                        open={notification.open} autoHideDuration={6000}
+                        onClose={() => setNotification({ ...notification, open: false })}
                         >
                         <Alert
                             // onClose={handleClose}
-                            severity="success" sx={{ width: '100%' }}>
-                            Data sent successfully!
-                            Please, wait until the sender confirms the transaction
+                            severity={notification.type} sx={{ width: '100%' }}>
+                            {notification.message}
                         </Alert>
                     </Snackbar>
                     <Backdrop
@@ -364,6 +462,7 @@ const Form = ({ auth }) => {
                                             onChange={handleChange}
                                             disabled={cardSectionVisible}
                                         />
+
                                         {
                                             !cardSectionVisible ? (
                                                 <>
@@ -437,23 +536,21 @@ const Form = ({ auth }) => {
                                             ) : (
                                                 <>
                                                     <TextField
-                                                        inputProps={
-                                                            getCardNumberProps({})
-                                                        }
-                                                        InputProps={{
-                                                            ...getCardNumberProps({endAdornment: (
-                                                                    <InputAdornment position="end">
-                                                                        <svg {...getCardImageProps({ images })} />
-                                                                    </InputAdornment>
-                                                                )}),
+                                                        {...getCardNumberProps({
+                                                            refKey: "inputRef",
                                                             onChange: handleChange
+                                                        })}
+                                                        name="cardNumber"
+                                                        label="Card number"
+                                                        variant="standard"
+                                                        placeholder="4545 4545 ..."
+                                                        InputProps={{
+                                                            endAdornment: (
+                                                                <InputAdornment position="end">
+                                                                    <svg {...getCardImageProps({ images })} />
+                                                                </InputAdornment>
+                                                            )
                                                         }}
-                                                        name={'cardNumber'}
-                                                        // id="card-number"
-                                                        // label="Card number"
-                                                        // variant="standard"
-                                                        onChange={handleChange}
-                                                        // value={card_number}
                                                     />
                                                     {/* <TextField
                                                         inputProps={
@@ -481,7 +578,7 @@ const Form = ({ auth }) => {
                                                         variant="contained"
                                                         fullWidth={true}
                                                         className="btn"
-                                                        onClick={handleCardDataSent}
+                                                        onClick={makeTrnasaction}
                                                         // type={'submit'}
                                                     >
                                                         Submit the payment request

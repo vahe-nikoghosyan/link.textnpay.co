@@ -1,7 +1,7 @@
 import React from 'react';
 import Countdown from "react-countdown";
 
-const Completionist = () => <span>You are good to go!</span>;
+const Completionist = () => <span>Session expired</span>;
 
 // Renderer callback with condition
 const renderer = ({ hours, minutes, seconds, completed }) => {
@@ -19,7 +19,7 @@ const renderer = ({ hours, minutes, seconds, completed }) => {
 
 const CountDown = () => {
     return (
-        <Countdown date={Date.now() + 60000} renderer={renderer} />
+        <Countdown date={Date.now() + 120000} renderer={renderer} />
     )
 }
 
